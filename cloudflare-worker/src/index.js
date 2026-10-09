@@ -225,12 +225,14 @@ async function trackedWrite(writes, what, fn) {
 }
 
 // --- REPORT BODY ---
-function buildCommentBody(build) {
+// Exported so the summary wording is covered by a unit test.
+export function buildCommentBody(build) {
   const { commitResult, hygieneResult } = build;
   const lines = [COMMENT_HEADER, ''];
 
   if (build.failed) {
     lines.push('Some checks failed. Fix the findings below and push again; this comment updates itself.');
+  } else if (build.warnings.length > 0) {
     lines.push('All required checks pass. A few suggestions are noted below.');
   } else {
     lines.push('All checks pass.');

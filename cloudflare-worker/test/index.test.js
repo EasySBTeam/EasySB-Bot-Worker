@@ -2,6 +2,24 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac, generateKeyPairSync } from 'node:crypto';
 import worker from '../src/index.js';
+import { buildCommentBody } from '../src/index.js';
+
+test('the comment summary names exactly one outcome', () => {
+  const base = { commitResult: { errors: [], warnings: [], commitScanCapped: false }, hygieneResult: { errors: [], warnings: [] } };
+
+  const passed = buildCommentBody({ ...base, failed: false, warnings: [] });
+  assert.match(passed, /All checks pass\./);
+  assert.doesNotMatch(passed, /Some checks failed/);
+  assert.doesNotMatch(passed, /suggestions are noted/);
+
+  const warned = buildCommentBody({ ...base, failed: false, warnings: [{ sha: 'abcdef1', message: 'x' }] });
+  assert.match(warned, /suggestions are noted/);
+  assert.doesNotMatch(warned, /Some checks failed/);
+
+  const failed = buildCommentBody({ ...base, failed: true, warnings: [{ sha: 'abcdef1', message: 'x' }] });
+  assert.match(failed, /Some checks failed/);
+  assert.doesNotMatch(failed, /suggestions are noted/);
+});
 
 const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const PRIVATE_KEY = privateKey.export({ type: 'pkcs8', format: 'pem' });
