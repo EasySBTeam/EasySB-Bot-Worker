@@ -9,6 +9,81 @@ import { handleScheduled } from './stale.js';
 // run finds the comment it wrote so it can be edited or removed.
 const COMMENT_HEADER = '## Formality Check: EasySB';
 
+// --- GITHUB APP MANIFEST SETUP ---
+// GitHub has no API to create an App, and the manifest flow needs one browser
+// confirmation from an organization owner. These two routes turn that into a
+// single click: `/setup/github-app` POSTs the manifest to GitHub, and GitHub
+// redirects back to the callback with a short-lived code. Both routes stop
+// answering the moment APP_ID is configured, so setup leaves nothing open.
+const SETUP_ORG = 'EasySBTeam';
+const SETUP_APP_NAME = 'EasySB Bot';
+const SETUP_REPO_URL = 'https://github.com/EasySBTeam/EasySB-Bot-Worker';
+
+function htmlResponse(body, status = 200) {
+  return new Response(body, {
+    status,
+    headers: { 'content-type': 'text/html; charset=utf-8' },
+  });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// The manifest declares exactly what the worker uses: read the repository
+// files and the diff, write checks and labels, and receive pull_request
+// deliveries. Everything else is left at GitHub's default (no access).
+function renderSetupPage(origin) {
+  const manifest = {
+    name: SETUP_APP_NAME,
+    url: SETUP_REPO_URL,
+    hook_attributes: { url: `${origin}/webhook`, active: true },
+    redirect_url: `${origin}/setup/github-app/callback`,
+    public: false,
+    default_permissions: {
+      checks: 'write',
+      contents: 'read',
+      issues: 'write',
+      metadata: 'read',
+      pull_requests: 'read',
+    },
+    default_events: ['pull_request'],
+  };
+  const action = `https://github.com/organizations/${SETUP_ORG}/settings/apps/new?state=${crypto.randomUUID()}`;
+  return `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Create the ${escapeHtml(SETUP_APP_NAME)} GitHub App</title></head>
+<body onload="document.forms[0].submit()">
+<p>Creating the <strong>${escapeHtml(SETUP_APP_NAME)}</strong> GitHub App in the
+<strong>${escapeHtml(SETUP_ORG)}</strong> organization. If nothing happens, click the button.</p>
+<form method="post" action="${escapeHtml(action)}">
+<input type="hidden" name="manifest" value="${escapeHtml(JSON.stringify(manifest))}">
+<button type="submit">Create GitHub App</button>
+</form>
+</body>
+</html>`;
+}
+
+function renderCallbackPage(url) {
+  const code = url.searchParams.get('code') || '';
+  if (!code) {
+    return htmlResponse('<p>No code was returned. Start again from /setup/github-app.</p>', 400);
+  }
+  return htmlResponse(`<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>${escapeHtml(SETUP_APP_NAME)} setup</title></head>
+<body>
+<h1>App created</h1>
+<p>Send this code back to the assistant to finish the setup:</p>
+<textarea readonly rows="3" style="width:100%;font-family:monospace">${escapeHtml(code)}</textarea>
+</body>
+</html>`);
+}
+
 // Override commands, recognized both in the pull request description and in a
 // maintainer's comment. `[allow branch]` waives the protected-branch rule for a
 // pull request a maintainer deliberately opened from master.
@@ -412,6 +487,15 @@ export default {
   async fetch(request, env, ctx) {
     try {
       const url = new URL(request.url);
+
+      // One-click GitHub App creation. Both routes are inert once APP_ID is
+      // configured, so they cannot be used to create a second app later.
+      if (request.method === 'GET' && !env.APP_ID && url.pathname === '/setup/github-app') {
+        return htmlResponse(renderSetupPage(url.origin));
+      }
+      if (request.method === 'GET' && !env.APP_ID && url.pathname === '/setup/github-app/callback') {
+        return renderCallbackPage(url);
+      }
 
       if (request.method === 'POST' && url.pathname === '/webhook') {
         // GitHub gives up on a delivery after ten seconds; registering the work

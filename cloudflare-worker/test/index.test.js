@@ -108,3 +108,23 @@ test('a clean pull request passes and reports two check runs', async () => {
   const checkRunCalls = calls.filter(c => c.url.includes('/check-runs'));
   assert.equal(checkRunCalls.length, 2);
 });
+
+test('the setup page posts a manifest to the organization', async () => {
+  const res = await worker.fetch(new Request('https://easysb-bot.example.workers.dev/setup/github-app'), {});
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /organizations\/EasySBTeam\/settings\/apps\/new/);
+  assert.match(html, /name="manifest"/);
+  assert.match(html, /easysb-bot\.example\.workers\.dev\/webhook/);
+});
+
+test('the setup routes disable themselves once APP_ID is set', async () => {
+  const res = await worker.fetch(new Request('https://easysb-bot.example.workers.dev/setup/github-app'), { APP_ID });
+  assert.equal(res.status, 400);
+});
+
+test('the callback echoes the returned code', async () => {
+  const res = await worker.fetch(new Request('https://easysb-bot.example.workers.dev/setup/github-app/callback?code=abc123&state=x'), {});
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /abc123/);
+});

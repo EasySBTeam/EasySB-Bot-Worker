@@ -95,6 +95,27 @@ membership is private. Bots never count, whatever access they hold.
 
 ## Deployment
 
+### Creating the GitHub App
+
+GitHub has no API to create an App, so creation goes through the manifest flow,
+which needs one browser confirmation from an organization owner. The worker
+serves that flow so it is a single click:
+
+1. Open `https://<worker-hostname>/setup/github-app` while logged in as an
+   organization owner. The page posts a manifest to GitHub; confirm on the
+   GitHub page that follows.
+2. GitHub redirects back to the worker's callback page with a short-lived code.
+   Exchange that code for the app's credentials with
+   `POST https://api.github.com/app-manifests/{code}/conversions` and store the
+   returned `id`, `pem` and `webhook_secret` on the worker.
+3. Install the app on the organization:
+   `https://github.com/apps/<app-slug>/installations/new`.
+
+The two `/setup/github-app` routes stop answering once `APP_ID` is configured,
+so nothing stays open after setup.
+
+### Manual configuration
+
 The worker needs a GitHub App with these repository permissions:
 
 - **Checks:** read and write
