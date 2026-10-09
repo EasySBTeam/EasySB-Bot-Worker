@@ -120,8 +120,12 @@ The worker needs a GitHub App with these repository permissions:
 
 - **Checks:** read and write
 - **Issues:** read and write
-- **Pull requests:** read
+- **Pull requests:** read and write
 - **Metadata:** read
+
+`Pull requests: write` is required because GitHub gates the pull request
+conversation endpoints (comments and labels) behind it; `Issues: write` alone
+covers plain issues but not pull requests.
 
 Subscribe the app to the **Pull request** event and point its webhook URL at
 `https://<worker-hostname>/webhook`. Set the webhook secret and the app's

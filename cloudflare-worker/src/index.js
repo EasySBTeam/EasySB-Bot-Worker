@@ -49,7 +49,9 @@ function renderSetupPage(origin) {
       contents: 'read',
       issues: 'write',
       metadata: 'read',
-      pull_requests: 'read',
+      // Write, not read: the bot comments on and labels pull requests, and
+      // GitHub gates those conversation endpoints behind pull_requests: write.
+      pull_requests: 'write',
     },
     default_events: ['pull_request'],
   };
