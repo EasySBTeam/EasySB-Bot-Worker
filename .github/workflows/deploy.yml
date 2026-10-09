@@ -1,0 +1,40 @@
+name: Deploy webhook to Cloudflare Worker
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# One run at a time, tests included: a push waits for the run in progress, and
+# a newer push replaces one that is still waiting.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-test-and-build.yml
+
+  deploy:
+    name: Deploy Worker
+    needs: ci
+    runs-on: ubuntu-slim
+    environment:
+      name: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Inject deploy stamp into wrangler.toml
+        run: |
+          sed -i "s/DEPLOY_HASH = \"unknown\"/DEPLOY_HASH = \"${{ github.sha }}\"/" cloudflare-worker/wrangler.toml
+          sed -i "s/DEPLOY_DATE = \"unknown\"/DEPLOY_DATE = \"$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S %Z')\"/" cloudflare-worker/wrangler.toml
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: cloudflare-worker

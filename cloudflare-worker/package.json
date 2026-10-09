@@ -1,0 +1,12 @@
+{
+  "name": "easysb-bot-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "GitHub App webhook engine for EasySB Team pull request formalities",
+  "scripts": {
+    "test": "NODE_ENV=test node --test --test-reporter spec 'test/**/*.test.js'",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "check_signoff": true,
+  "check_body": true,
+  "max_subject_len_soft": 72,
+  "enable_stale_bot": true,
+  "stale_ignored_users": []
+}

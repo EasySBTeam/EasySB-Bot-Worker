@@ -1,0 +1,12 @@
+name: Run unit tests and verify build
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/reusable-test-and-build.yml

@@ -1,0 +1,15 @@
+"area: tui":
+  - changed-files:
+      - any-glob-to-any-file:
+          - internal/tui/**
+          - internal/i18n/**
+
+"area: core":
+  - changed-files:
+      - any-glob-to-any-file:
+          - internal/node/**
+          - internal/subscribe/**
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "*.md"]
