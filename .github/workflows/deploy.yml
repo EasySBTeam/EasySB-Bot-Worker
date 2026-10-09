@@ -34,7 +34,7 @@ jobs:
           sed -i "s/DEPLOY_DATE = \"unknown\"/DEPLOY_DATE = \"$(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S %Z')\"/" cloudflare-worker/wrangler.toml
 
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: cloudflare-worker
