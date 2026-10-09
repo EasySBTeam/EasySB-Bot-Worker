@@ -1,7 +1,10 @@
 name = "easysb-bot"
 main = "src/index.js"
 compatibility_date = "2026-06-29"
-workers_dev = false
+# The GitHub App webhook needs a stable URL. Until a custom domain is attached
+# (a `routes` entry on kejizero.xyz, say), the workers.dev endpoint is what the
+# app points at: https://easysb-bot.<account-subdomain>.workers.dev/webhook
+workers_dev = true
 preview_urls = false
 
 [observability]
